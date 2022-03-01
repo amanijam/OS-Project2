@@ -140,16 +140,21 @@ int run(char* script){
 		return badcommandFileDoesNotExist();
 	}
 
+	
 	fgets(line, 999, p);
+	int lineCount = 1;
+	char lineBuffer[10];
 	while(1){
-		errCode = parseInput(line);	// which calls interpreter()
-		memset(line, 0, sizeof(line));
+		//errCode = parseInput(line);	// which calls interpreter()
+		//memset(line, 0, sizeof(line));
+		sprintf(lineBuffer, "%d", lineCount);
+		set(lineBuffer, line);
 
 		if(feof(p)){
 			break;
 		}
 		fgets(line, 999, p);
-
+		lineCount++;
 	}
 
     fclose(p);
