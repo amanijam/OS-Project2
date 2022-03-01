@@ -141,8 +141,7 @@ int run(char* script){
 		return badcommandFileDoesNotExist();
 	}
 
-	// load all lines of code into shell memory
-	// instead of loading and executing each line one  at a time
+	// Load script source code into shellmemory
 	int lineCount = 0;
 	char lineBuffer[10];
 	int startPosition; // contains position in memory of 1st line of code
@@ -162,6 +161,11 @@ int run(char* script){
     fclose(p);
 	
 	errCode = schedulerRunScript(startPosition, lineCount);
+
+	// remove script course code from shellmemory
+	for(int i = startPosition; i < startPosition+lineCount; i++){
+		mem_remove_by_position(i);
+	}
 
 	return errCode;
 }
