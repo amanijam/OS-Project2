@@ -4,6 +4,7 @@
 
 #include "shellmemory.h"
 #include "shell.h"
+#include "scheduler.h"
 
 int MAX_ARGS_SIZE = 7;
 
@@ -140,24 +141,27 @@ int run(char* script){
 		return badcommandFileDoesNotExist();
 	}
 
-	
-	fgets(line, 999, p);
-	int lineCount = 1;
+	// load all lines of code into shell memory
+	// instead of loading and executing each line one  at a time
+	int lineCount = 0;
 	char lineBuffer[10];
-	while(1){
+	int startPosition; // contains position in memory of 1st line of code
+
+	while(!feof(p)){
 		//errCode = parseInput(line);	// which calls interpreter()
 		//memset(line, 0, sizeof(line));
-		sprintf(lineBuffer, "%d", lineCount);
-		set(lineBuffer, line);
-
-		if(feof(p)){
-			break;
-		}
 		fgets(line, 999, p);
 		lineCount++;
-	}
+		sprintf(lineBuffer, "%d", lineCount);
 
+		if(lineCount == 1) startPosition = set(lineBuffer, line);
+		else set(lineBuffer, line);
+
+		memset(line, 0, sizeof(line));
+	}
     fclose(p);
+	
+	errCode = schedulerRunScript(startPosition, lineCount);
 
 	return errCode;
 }
