@@ -45,14 +45,15 @@ void mem_init(){
 }
 
 // Set key value pair
-void mem_set_value(char *var_in, char *value_in) {
+// Return position in memory array where the key value pair was found or placed in
+int mem_set_value(char *var_in, char *value_in) {
 	
 	int i;
 
 	for (i=0; i<1000; i++){
 		if (strcmp(shellmemory[i].var, var_in) == 0){
 			shellmemory[i].value = strdup(value_in);
-			return;
+			return i;
 		} 
 	}
 
@@ -61,11 +62,11 @@ void mem_set_value(char *var_in, char *value_in) {
 		if (strcmp(shellmemory[i].var, "none") == 0){
 			shellmemory[i].var = strdup(var_in);
 			shellmemory[i].value = strdup(value_in);
-			return;
+			return i;
 		} 
 	}
 
-	return;
+	return 1001;
 
 }
 
@@ -81,4 +82,10 @@ char *mem_get_value(char *var_in) {
 	}
 	return "Variable does not exist";
 
+}
+
+char *mem_get_value_from_position(int i){
+	if(i < 1000){
+		return shellmemory[i].value;
+	} else return "Invalid position";
 }
