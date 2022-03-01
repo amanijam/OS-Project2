@@ -89,3 +89,8 @@ char *mem_get_value_from_position(int i){
 		return shellmemory[i].value;
 	} else return "Invalid position";
 }
+
+void mem_remove_by_position(int i){
+	shellmemory[i].var = "none";
+	shellmemory[i].value = "none";
+}
