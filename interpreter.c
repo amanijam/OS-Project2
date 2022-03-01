@@ -12,10 +12,11 @@ int help();
 int quit();
 int badcommand();
 int badcommandSet();
+int badcommandFileDoesNotExist();
+int badcommandPolicy();
 int set(char* var, char* value);
 int print(char* var);
 int run(char* script);
-int badcommandFileDoesNotExist();
 int ls();
 
 // Interpret commands and their arguments
@@ -81,6 +82,29 @@ int interpreter(char* command_args[], int args_size){
 		if (args_size != 1) return badcommand();
 		return ls();
 
+	} else if (strcmp(command_args[0], "exec")==0) {
+		if(args_size > 5) {
+			return badcommandSet();
+		}
+		else if (args_size < 3) {
+			return badcommand();
+		}
+		char *policy = command_args[args_size-1];
+		if(strcmp(policy, "FCFS")== 0){
+			printf("Executing with FCFS policy\n");
+			return 0;
+		} else if(strcmp(policy, "SJF")== 0){
+			printf("Executing with SJF policy\n");
+			return 0;
+		} else if(strcmp(policy, "RR")== 0){
+			printf("Executing with RR policy\n");
+			return 0;
+		} else if(strcmp(policy, "AGING")== 0){
+			printf("Executing with AGING policy\n");
+			return 0;
+		} else{
+			return badcommandPolicy();
+		}
 	} else return badcommand();
 }
 
@@ -120,6 +144,11 @@ int badcommandSet(){
 int badcommandFileDoesNotExist(){
 	printf("%s\n", "Bad command: File not found");
 	return 3;
+}
+
+int badcommandPolicy(){
+	printf("%s\n", "Bad command: Invalid policy");
+	return 4;
 }
 
 int set(char* var, char* value){
