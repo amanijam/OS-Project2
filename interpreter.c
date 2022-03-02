@@ -89,20 +89,31 @@ int interpreter(char* command_args[], int args_size){
 		else if (args_size < 3) {
 			return badcommand();
 		}
+
 		char *policy = command_args[args_size-1];
+		int numOfProgs = args_size-2;
+
+		// array of script file names
+		char *scripts[3];
+		for(int i = 1; i < numOfProgs+1; i++){
+			scripts[i-1] = command_args[i];
+		}
+		
+		int errCode;
 		if(strcmp(policy, "FCFS")== 0){
-			printf("Executing with FCFS policy\n");
-			return 0;
+			errCode = schedulerExecFCFS(scripts, numOfProgs);
+			return errCode;
+
 		} else if(strcmp(policy, "SJF")== 0){
-			printf("Executing with SJF policy\n");
 			return 0;
+
 		} else if(strcmp(policy, "RR")== 0){
-			printf("Executing with RR policy\n");
 			return 0;
+
 		} else if(strcmp(policy, "AGING")== 0){
-			printf("Executing with AGING policy\n");
 			return 0;
-		} else{
+
+		} else {
 			return badcommandPolicy();
 		}
 	} else return badcommand();
@@ -164,20 +175,16 @@ int print(char* var){
 int run(char* script){
 	int errCode = 0;
 	char line[1000];
-	FILE *p = fopen(script,"rt");  // the program is in a file
+	FILE *p = fopen(script,"rt"); 
 
-	if(p == NULL){
-		return badcommandFileDoesNotExist();
-	}
-
+	if(p == NULL) return badcommandFileDoesNotExist();
+	
 	// Load script source code into shellmemory
 	int lineCount = 0;
 	char lineBuffer[10];
 	int startPosition; // contains position in memory of 1st line of code
 
 	while(!feof(p)){
-		//errCode = parseInput(line);	// which calls interpreter()
-		//memset(line, 0, sizeof(line));
 		fgets(line, 999, p);
 		lineCount++;
 		sprintf(lineBuffer, "%d", lineCount);
@@ -189,10 +196,16 @@ int run(char* script){
 	}
     fclose(p);
 	
-	errCode = schedulerRunScript(startPosition, lineCount);
+	char *currCommand;
+	int counter = 0;
+	for(int i = 0; i < lineCount; i++){
+		currCommand = mem_get_value_from_position(startPosition + counter);
+		counter++; // increment pc
+		parseInput(currCommand); // from shell, which calls interpreter()
+	}
 
 	// remove script course code from shellmemory
-	for(int i = startPosition; i < startPosition+lineCount; i++){
+	for(int i = startPosition; i < startPosition + lineCount; i++){
 		mem_remove_by_position(i);
 	}
 

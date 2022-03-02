@@ -1,1 +1,1 @@
-int schedulerRunScript(int start, int len);
+int schedulerExecFCFS(char *scripts[], int progNum);

@@ -4,25 +4,27 @@
 
 #include "shell.h"
 #include "shellmemory.h"
+#include "interpreter.h"
 
 typedef struct PCB {
     int pid;
     int startMem;
-    int scriptlen; // length = number of lines of code
+    int len; // length = number of lines of code
     int pc; // current line to execute, offset from startMem
     struct PCB *next;
 } PCB;
 
 PCB *head = NULL; // global head of ready queue
 
-int schedulerRunScript(int start, int len);
+int schedulerExecFCFS(char *scripts[], int progNum);
+void runQueue(int progNum);
 
 void enqueue(int start, int len){
     if(head == NULL) {
         head = malloc(sizeof(PCB)); 
         head -> pid = 1;
         head -> startMem = start;
-        head -> scriptlen = len;
+        head -> len = len;
         head -> pc = 0;
         head -> next = NULL;
     } else {
@@ -32,11 +34,11 @@ void enqueue(int start, int len){
             current = current -> next;
             prevID = current -> pid;
         } 
-        PCB *new = current -> next;
-        new = malloc(sizeof(PCB)); 
-        new -> pid = prevID++; // unique pid
+        PCB *new = malloc(sizeof(PCB));
+        current -> next = new; 
+        new -> pid = ++prevID; // unique pid
         new -> startMem = start;
-        new -> scriptlen = len;
+        new -> len = len;
         new -> pc = 0;
         new -> next = NULL;
     }
@@ -52,31 +54,60 @@ int dequeue(){
     }
 
     int retpid = (*head_ptr) -> pid; 
-
-    PCB *next_pcb = (*head_ptr) -> next;  
-    free(*head_ptr);
-    //*head_ptr = next_pcb;  //  Assign the new node as the head
+    PCB *next_pcb = (*head_ptr) -> next; 
+    free(*head_ptr); 
     head = next_pcb;
 
     return retpid;
 }
 
-int schedulerRunScript(int start, int len){
-    // add PCB for script to the tail of the readyqueue
-    enqueue(start, len);
+int schedulerExecFCFS(char *scripts[], int progNum){
+    int errCode;
+    char line[1000];
+    int lineCount, startPosition;
+    char buff[10];
 
-    /* Run entire process at head of queue */
+    for(int i = 0; i < progNum; i++){
+        errCode = 0;
+        
+        FILE *p = fopen(scripts[i],"rt"); 
+        if(p == NULL) return badcommandFileDoesNotExist();
+        
+        lineCount = 0;
+        startPosition; // contains position in memory of 1st line of code
 
-    // send each line to the interpreter
-    char *currCommand;
-    int errCode = 0;
-    for(int i = 0; i < head -> scriptlen; i++){
-        currCommand = mem_get_value_from_position(head -> startMem + head -> pc);
-        head -> pc = (head -> pc) + 1; // increment pc
-        errCode = parseInput(currCommand); // from shell, which calls interpreter()
+        while(!feof(p)){
+            fgets(line, 999, p);
+            lineCount++;
+            sprintf(buff, "%d", lineCount);
+            if(lineCount == 1) startPosition = insert(buff, line);
+            else insert(buff, line);
+
+            memset(line, 0, sizeof(line));
+        }
+        fclose(p);
+
+        enqueue(startPosition, lineCount);
     }
 
-    dequeue();
-    return errCode;
-    
+    runQueue(progNum);
+}
+
+void runQueue(int progNum){
+    // run head prog, remove from mem, dequeue
+    char *currCommand;
+    for(int i = 0; i < progNum; i++){        
+        for(int j = 0; j < head -> len; j++){
+            currCommand = mem_get_value_from_position(head -> startMem + head -> pc);
+            head -> pc = (head -> pc) + 1; // increment pc
+            parseInput(currCommand); // from shell, which calls interpreter()
+        }
+
+        //remove script course code from shellmemory and dequeue (clean up)
+        for(int k = head -> startMem; k < head -> startMem + head -> len; k++){
+            mem_remove_by_position(k);
+        }
+
+        dequeue();
+    }
 }

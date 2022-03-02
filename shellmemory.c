@@ -45,7 +45,6 @@ void mem_init(){
 }
 
 // Set key value pair
-// Return position in memory array where the key value pair was found or placed in
 int mem_set_value(char *var_in, char *value_in) {
 	
 	int i;
@@ -68,6 +67,20 @@ int mem_set_value(char *var_in, char *value_in) {
 
 	return 1001;
 
+}
+
+// Return position in memory array where the key value pair was placed in
+int insert(char *var_in, char *value_in){
+	int i;
+	for (i=0; i<1000; i++){
+		if (strcmp(shellmemory[i].var, "none") == 0){
+			shellmemory[i].var = strdup(var_in);
+			shellmemory[i].value = strdup(value_in);
+			return i;
+		} 
+	}
+
+	return 1001;
 }
 
 //get value based on input key
