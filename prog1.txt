@@ -1,0 +1,5 @@
+echo helloP1
+set x 5
+echo $x 
+echo helloAgain
+echo byeP1
