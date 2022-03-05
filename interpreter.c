@@ -100,12 +100,10 @@ int interpreter(char* command_args[], int args_size){
 		}
 		
 		int errCode;
-		if(strcmp(policy, "FCFS")== 0){
-			errCode = schedulerExecFCFS(scripts, numOfProgs);
-			return errCode;
 
-		} else if(strcmp(policy, "SJF")== 0){
-			return 0;
+		if(strcmp(policy, "FCFS")== 0 || strcmp(policy, "SJF")== 0){
+			errCode = schedulerExec(scripts, numOfProgs, policy);
+			return errCode;
 
 		} else if(strcmp(policy, "RR")== 0){
 			return 0;

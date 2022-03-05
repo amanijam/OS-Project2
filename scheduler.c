@@ -14,10 +14,16 @@ typedef struct PCB {
     struct PCB *next;
 } PCB;
 
+typedef struct Pair{
+    int startPosition;
+    int len;
+}Pair;
+
 PCB *head = NULL; // global head of ready queue
 
-int schedulerExecFCFS(char *scripts[], int progNum);
+int schedulerExec(char *scripts[], int progNum);
 void runQueue(int progNum);
+void RR(int progNum);
 
 void enqueue(int start, int len){
     if(head == NULL) {
@@ -61,11 +67,13 @@ int dequeue(){
     return retpid;
 }
 
-int schedulerExecFCFS(char *scripts[], int progNum){
+
+int schedulerExec(char *scripts[], int progNum, char *policy){
     int errCode;
     char line[1000];
     int lineCount, startPosition;
     char buff[10];
+    Pair[] pairs = new Pair[progNum];
 
     for(int i = 0; i < progNum; i++){
         errCode = 0;
@@ -75,7 +83,7 @@ int schedulerExecFCFS(char *scripts[], int progNum){
         
         lineCount = 0;
         startPosition; // contains position in memory of 1st line of code
-
+        
         while(!feof(p)){
             fgets(line, 999, p);
             lineCount++;
@@ -87,16 +95,41 @@ int schedulerExecFCFS(char *scripts[], int progNum){
         }
         fclose(p);
 
-        enqueue(startPosition, lineCount);
-    }
+            if(strcmp(policy, "SJF")== 0){
+                Pair *new = malloc(sizeof(Pair));
+                new -> startPosition = startPosition;
+                new -> len = lineCount;
 
-    runQueue(progNum);
+                int j;
+                for(j = i-1; j >= 0; j--){
+                    if(pairs[j] -> len > lineCount){
+                        pairs[j+1] = pairs[j];
+                    }
+                    else{
+                        break;
+                    } 
+                }
+                pairs[j+1] = new;
+                enqueue(pairs[0] -> startPosition, pairs[0] -> len);
+            } 
+             else{
+             enqueue(startPosition, lineCount);
+             }
+        }
+    }
+    if(strcmp(policy, "RR")== 0){
+        RR(progNum);
+    }
+    else{
+        runQueue(progNum);
+    }
 }
 
 void runQueue(int progNum){
     // run head prog, remove from mem, dequeue
     char *currCommand;
-    for(int i = 0; i < progNum; i++){        
+    for(int i = 0; i < progNum; i++){
+
         for(int j = 0; j < head -> len; j++){
             currCommand = mem_get_value_from_position(head -> startMem + head -> pc);
             head -> pc = (head -> pc) + 1; // increment pc
@@ -108,6 +141,29 @@ void runQueue(int progNum){
             mem_remove_by_position(k);
         }
 
+        dequeue();
+    }
+}
+
+void RR(int progNum){
+    // run head prog, remove from mem, dequeue
+    char *currCommand;
+    for(int i = 0; i < progNum; i++){
+
+        for(int j = 0; j < 2; j++){
+            currCommand = mem_get_value_from_position(head -> startMem + head -> pc);
+            head -> pc = (head -> pc) + 1; // increment pc
+            parseInput(currCommand); // from shell, which calls interpreter()
+        }
+
+        //remove script course code from shellmemory and dequeue (clean up)
+        for(int k = head -> startMem; k < head -> startMem + head -> len; k++){
+            mem_remove_by_position(k);
+        }
+        if(head -> pc <= head -> len){
+            enqueue(head -> startMem, head -> len);
+        }
+        
         dequeue();
     }
 }
