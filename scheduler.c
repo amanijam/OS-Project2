@@ -25,8 +25,6 @@ int latestPid;
 void setPolicy(char *p);
 int schedulerStart(char *scripts[], int progNum);
 void runQueue(int progNum);
-void printQueue();
-void printLenScores();
 bool age();
 int enqueue(int start, int len);
 int prepend(int start, int len);
@@ -72,9 +70,6 @@ int schedulerStart(char *scripts[], int progNum){
         if(strcmp(policy, "SJF") == 0 || strcmp(policy, "AGING") == 0) insertInQueue(startPosition, lineCount); // add PCB to an ordered queue in inc order by program length (lines)
         else enqueue(startPosition, lineCount); // add PCB to the end of queue (no ordering)
     }
-    printf("At the start\n");
-    printQueue();
-    printLenScores();
     runQueue(progNum);
 }
 
@@ -108,13 +103,9 @@ void runQueue(int progNum){
         bool stopAging = false;
 
         while(head != NULL){
-            printf("Before aging:\n");
-            printQueue();
-            printLenScores();
             // execute one command
             currCommand = mem_get_value_from_position(head -> startMem + head -> pc - 1);
             head -> pc = (head -> pc) + 1; // increment pc
-            printf("Executing command: %s\n", currCommand);
             parseInput(currCommand); // from shell, which calls interpreter()
             endT++; // increment time
 
@@ -124,9 +115,6 @@ void runQueue(int progNum){
                 endT = 0; // restart "timer"
                 if(!stopAging){
                     stopAging = age();
-                    printf("After aging:\n");
-                    printQueue();
-                    printLenScores();
                     if(head -> pc > head -> len){
                         for(int k = head -> startMem; k < head -> startMem + head -> len; k++){
                             mem_remove_by_position(k);
@@ -211,26 +199,6 @@ void runQueue(int progNum){
         }
     }
 
-}
-
-void printQueue(){
-    PCB *curr = head;
-    printf("Queue: ");
-    while(curr != NULL){
-        printf("%d, ", curr -> pid);
-        curr = curr -> next;
-    }
-    printf("\n");
-}
-
-void printLenScores(){
-    PCB *curr = head;
-    printf("Len scores: ");
-    while(curr != NULL){
-        printf("%d, ", curr -> lenScore);
-        curr = curr -> next;
-    }
-    printf("\n");
 }
 
 // Decrease lenScore of all PCBs by 1, except for the head
