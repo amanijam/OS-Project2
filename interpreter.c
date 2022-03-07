@@ -15,6 +15,7 @@ int badcommand();
 int badcommandSet();
 int badcommandFileDoesNotExist();
 int badcommandPolicy();
+int sameName();
 int set(char* var, char* value);
 int print(char* var);
 int run(char* script);
@@ -100,6 +101,14 @@ int interpreter(char* command_args[], int args_size){
 			scripts[i-1] = command_args[i];
 		}
 
+		for(int i = 0; i < numOfProgs-1; i++){
+			for (int j = i+1; j < numOfProgs; j++){
+				if (strcmp(scripts[i], scripts[j]) == 0){
+					return sameName();
+				}
+			}
+		}
+
 		if(strcmp(policy, "FCFS") == 0
 		   || strcmp(policy, "SJF")== 0 
 		   || strcmp(policy, "RR")== 0
@@ -154,6 +163,11 @@ int badcommandFileDoesNotExist(){
 int badcommandPolicy(){
 	printf("%s\n", "Bad command: Invalid policy");
 	return 4;
+}
+
+int sameName(){
+	printf("%s\n", "Identical FileNames");
+	return 5;
 }
 
 int set(char* var, char* value){
