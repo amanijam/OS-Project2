@@ -15,7 +15,7 @@ int badcommand();
 int badcommandSet();
 int badcommandFileDoesNotExist();
 int badcommandPolicy();
-int sameName();
+int badcommandSameName();
 int set(char* var, char* value);
 int print(char* var);
 int run(char* script);
@@ -104,7 +104,7 @@ int interpreter(char* command_args[], int args_size){
 		for(int i = 0; i < numOfProgs-1; i++){
 			for (int j = i+1; j < numOfProgs; j++){
 				if (strcmp(scripts[i], scripts[j]) == 0){
-					return sameName();
+					return badcommandSameName();
 				}
 			}
 		}
@@ -165,8 +165,8 @@ int badcommandPolicy(){
 	return 4;
 }
 
-int sameName(){
-	printf("%s\n", "Identical FileNames");
+int badcommandSameName(){
+	printf("%s\n", "Bad command: same file name");
 	return 5;
 }
 
