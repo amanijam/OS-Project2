@@ -99,25 +99,14 @@ int interpreter(char* command_args[], int args_size){
 		for(int i = 1; i < numOfProgs+1; i++){
 			scripts[i-1] = command_args[i];
 		}
-		
-		int errCode;
-		setPolicy(policy);
-		if(strcmp(policy, "FCFS")== 0){
-			errCode = schedulerStart(scripts, numOfProgs);
-			return errCode;
 
-		} else if(strcmp(policy, "SJF")== 0){
-			errCode = schedulerStart(scripts, numOfProgs);
-			return errCode;
-			return 0;
-
-		} else if(strcmp(policy, "RR")== 0){
-			errCode = schedulerStart(scripts, numOfProgs);
-			return errCode;
-
-		} else if(strcmp(policy, "AGING")== 0){
-			return 0;
-
+		if(strcmp(policy, "FCFS") == 0
+		   || strcmp(policy, "SJF")== 0 
+		   || strcmp(policy, "RR")== 0
+		   || strcmp(policy, "AGING")== 0)
+		{
+			setPolicy(policy);
+			return schedulerStart(scripts, numOfProgs);
 		} else {
 			return badcommandPolicy();
 		}

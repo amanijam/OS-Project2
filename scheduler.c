@@ -11,7 +11,8 @@ typedef struct PCB {
     int pid;
     int startMem;
     int len; // length = number of lines of code
-    int pc; // current line to execute, offset from startMem
+    int lenScore;
+    int pc; // current line to execute
     struct PCB *next;
 } PCB;
 
@@ -24,6 +25,9 @@ int latestPid;
 void setPolicy(char *p);
 int schedulerStart(char *scripts[], int progNum);
 void runQueue(int progNum);
+void printQueue();
+void printLenScores();
+bool age();
 int enqueue(int start, int len);
 int prepend(int start, int len);
 int insertInQueue(int start, int len);
@@ -65,9 +69,12 @@ int schedulerStart(char *scripts[], int progNum){
         }
         fclose(p);
 
-        if(strcmp(policy, "SJF") != 0) enqueue(startPosition, lineCount);
-        else insertInQueue(startPosition, lineCount); // add PCB to an ordered queue in inc order by program length (lines)
+        if(strcmp(policy, "SJF") == 0 || strcmp(policy, "AGING") == 0) insertInQueue(startPosition, lineCount); // add PCB to an ordered queue in inc order by program length (lines)
+        else enqueue(startPosition, lineCount); // add PCB to the end of queue (no ordering)
     }
+    printf("At the start\n");
+    printQueue();
+    printLenScores();
     runQueue(progNum);
 }
 
@@ -93,6 +100,86 @@ void runQueue(int progNum){
             }
             dequeue();
         }
+    } else if(strcmp(policy, "AGING") == 0){
+        int timeSlice = 1;
+        int startT = 0;
+        int endT = 0;
+        char *currCommand;
+        bool stopAging = false;
+
+        while(head != NULL){
+            printf("Before aging:\n");
+            printQueue();
+            printLenScores();
+            // execute one command
+            currCommand = mem_get_value_from_position(head -> startMem + head -> pc - 1);
+            head -> pc = (head -> pc) + 1; // increment pc
+            printf("Executing command: %s\n", currCommand);
+            parseInput(currCommand); // from shell, which calls interpreter()
+            endT++; // increment time
+
+            // reassess after a time slice has passed
+            if(endT - startT >= timeSlice){ 
+                 // age
+                endT = 0; // restart "timer"
+                if(!stopAging){
+                    stopAging = age();
+                    printf("After aging:\n");
+                    printQueue();
+                    printLenScores();
+                    if(head -> pc > head -> len){
+                        for(int k = head -> startMem; k < head -> startMem + head -> len; k++){
+                            mem_remove_by_position(k);
+                        }
+                        dequeue();
+                    }
+                    // check if there is a prog with lenScore lower than that of the head
+                    PCB *curr = head;
+                    PCB *lowest = head;
+                    PCB *lowestPrev = NULL;
+                    PCB *lowestNext = lowest -> next;
+                    // find lowest score in queue
+                    while(curr -> next != NULL){
+                        if(curr -> next -> lenScore < lowest -> lenScore){
+                            if(curr != head) lowestPrev = curr;
+                            lowest = curr -> next;
+                            lowestNext = lowest -> next;
+                        }
+                        curr = curr -> next;
+                    }
+                    // if prog with lowest score is something other than head, we promote it
+                    // promote: put current head at the end of the queue and prog with new lowest score at the head
+                    if(lowest -> pid != head -> pid){
+                        // find tail
+                        PCB *tail;
+                        curr = head;
+                        while (curr -> next != NULL) curr = curr -> next;
+                        tail = curr;
+                        PCB *headNext = head -> next;
+
+                        // place head at the end, after tail
+                        head -> next = NULL;
+                        tail -> next = head;
+                        
+                        // remove lowest from within the queue and place it at the head
+                        if(lowestPrev != NULL){ // lowest was not right after head
+                            lowestPrev -> next = lowestNext;
+                            lowest -> next = headNext;
+                        } // else lowest is already at head position 
+                        
+                        head = lowest;                
+                    }
+                } else{ // aging stopped
+                    if(head -> pc > head -> len){
+                        for(int k = head -> startMem; k < head -> startMem + head -> len; k++){
+                            mem_remove_by_position(k);
+                        }
+                        dequeue();
+                    }
+                }  
+            }
+        }
+        
     } else if(strcmp(policy, "RR") == 0){
         int quantum = 2;      
         char *currCommand;
@@ -103,7 +190,7 @@ void runQueue(int progNum){
                 currCommand = mem_get_value_from_position(currPCB -> startMem + currPCB -> pc - 1);
                 parseInput(currCommand); // from shell, which calls interpreter()
                 currPCB -> pc = (currPCB -> pc) + 1; // increment pc
-                if(currPCB -> pc > currPCB -> len) break;
+                if(currPCB -> pc > currPCB -> len) break; // break if we've reached the end of the prog
             }
 
             // if we executed everything, remove code from shellmemory and remove from queue (clean up)
@@ -126,6 +213,41 @@ void runQueue(int progNum){
 
 }
 
+void printQueue(){
+    PCB *curr = head;
+    printf("Queue: ");
+    while(curr != NULL){
+        printf("%d, ", curr -> pid);
+        curr = curr -> next;
+    }
+    printf("\n");
+}
+
+void printLenScores(){
+    PCB *curr = head;
+    printf("Len scores: ");
+    while(curr != NULL){
+        printf("%d, ", curr -> lenScore);
+        curr = curr -> next;
+    }
+    printf("\n");
+}
+
+// Decrease lenScore of all PCBs by 1, except for the head
+// Length score cannot be lower than 0
+bool age(){
+    PCB *curr = head;
+    bool allZeros = true;
+    while(curr -> next != NULL){
+        curr = curr -> next;
+        if(curr -> lenScore > 0){
+            allZeros = false;
+            curr -> lenScore = curr -> lenScore - 1;
+        }
+    }
+    return allZeros;
+}
+
 // Add PCB at the end of the queue
 // Return its pid
 int enqueue(int start, int len){
@@ -134,6 +256,7 @@ int enqueue(int start, int len){
         head -> pid = ++latestPid;
         head -> startMem = start;
         head -> len = len;
+        head -> lenScore = len;
         head -> pc = 1;
         head -> next = NULL;
         return head -> pid;
@@ -147,6 +270,7 @@ int enqueue(int start, int len){
         new -> pid = ++latestPid; // unique pid
         new -> startMem = start;
         new -> len = len;
+        new -> lenScore = len;
         new -> pc = 1;
         new -> next = NULL;
         return new -> pid;
@@ -161,6 +285,7 @@ int prepend(int start, int len){
         head -> pid = ++latestPid;
         head -> startMem = start;
         head -> len = len;
+        head -> lenScore = len;
         head -> pc = 1;
         head -> next = NULL;
     } else{
@@ -168,6 +293,7 @@ int prepend(int start, int len){
         new -> pid = ++latestPid; // unique pid
         new -> startMem = start;
         new -> len = len;
+        new -> lenScore = len;
         new -> pc = 1;
         new -> next = head;
         head = new;
@@ -188,6 +314,7 @@ int insertInQueue(int start, int len){
                 new -> pid = ++latestPid; 
                 new -> startMem = start;
                 new -> len = len;
+                new -> lenScore = len;
                 new -> pc = 1;
                 PCB *next = curr -> next;
                 curr -> next = new;
