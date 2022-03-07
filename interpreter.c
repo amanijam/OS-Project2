@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> 
+#include <stdbool.h>
 
 #include "shellmemory.h"
 #include "shell.h"
@@ -100,13 +101,19 @@ int interpreter(char* command_args[], int args_size){
 		}
 		
 		int errCode;
-
-		if(strcmp(policy, "FCFS")== 0 || strcmp(policy, "SJF")== 0){
-			errCode = schedulerExec(scripts, numOfProgs, policy);
+		setPolicy(policy);
+		if(strcmp(policy, "FCFS")== 0){
+			errCode = schedulerStart(scripts, numOfProgs);
 			return errCode;
 
-		} else if(strcmp(policy, "RR")== 0){
+		} else if(strcmp(policy, "SJF")== 0){
+			errCode = schedulerStart(scripts, numOfProgs);
+			return errCode;
 			return 0;
+
+		} else if(strcmp(policy, "RR")== 0){
+			errCode = schedulerStart(scripts, numOfProgs);
+			return errCode;
 
 		} else if(strcmp(policy, "AGING")== 0){
 			return 0;

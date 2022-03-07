@@ -1,1 +1,2 @@
-int schedulerExecFCFS(char *scripts[], int progNum);
+int schedulerStart(char *scripts[], int progNum);
+void setPolicy(char *p);
