@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> 
+#include <stdbool.h>
 
 #include "shellmemory.h"
 #include "shell.h"
@@ -14,6 +15,7 @@ int badcommand();
 int badcommandSet();
 int badcommandFileDoesNotExist();
 int badcommandPolicy();
+int sameName();
 int set(char* var, char* value);
 int print(char* var);
 int run(char* script);
@@ -98,21 +100,22 @@ int interpreter(char* command_args[], int args_size){
 		for(int i = 1; i < numOfProgs+1; i++){
 			scripts[i-1] = command_args[i];
 		}
-		
-		int errCode;
-		if(strcmp(policy, "FCFS")== 0){
-			errCode = schedulerExecFCFS(scripts, numOfProgs);
-			return errCode;
 
-		} else if(strcmp(policy, "SJF")== 0){
-			return 0;
+		for(int i = 0; i < numOfProgs-1; i++){
+			for (int j = i+1; j < numOfProgs; j++){
+				if (strcmp(scripts[i], scripts[j]) == 0){
+					return sameName();
+				}
+			}
+		}
 
-		} else if(strcmp(policy, "RR")== 0){
-			return 0;
-
-		} else if(strcmp(policy, "AGING")== 0){
-			return 0;
-
+		if(strcmp(policy, "FCFS") == 0
+		   || strcmp(policy, "SJF")== 0 
+		   || strcmp(policy, "RR")== 0
+		   || strcmp(policy, "AGING")== 0)
+		{
+			setPolicy(policy);
+			return schedulerStart(scripts, numOfProgs);
 		} else {
 			return badcommandPolicy();
 		}
@@ -160,6 +163,11 @@ int badcommandFileDoesNotExist(){
 int badcommandPolicy(){
 	printf("%s\n", "Bad command: Invalid policy");
 	return 4;
+}
+
+int sameName(){
+	printf("%s\n", "Identical FileNames");
+	return 5;
 }
 
 int set(char* var, char* value){

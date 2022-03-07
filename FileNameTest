@@ -1,0 +1,2 @@
+exec file1 file2 file1 FCFS
+exec prog1 prog1 FCFS

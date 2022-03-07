@@ -6,6 +6,5 @@ COMMAND                 DESCRIPTION
  print VAR              Displays the STRING assigned to VAR
  run SCRIPT.TXT         Executes the file SCRIPT.TXT
  
-$ Bad command: same file name
-$ Bad command: same file name
-$ 
+$ Identical FileNames
+$ Identical FileNames
