@@ -1,7 +1,33 @@
-# OS-Project2
+# ECSE 427/COMP 310
+# Assignment 2: Multi-process Scheduling
+## Authors:
+### Names & McGill IDs
+* Amani Jammoul 260381641
 
-Run has been modified
+* Annabelle Dion 260928845
 
-Majority of scheduling infrastructure has been implemented
+## In this folder:
+* Makefile
 
-exec command works with up to 3 args but only with FCFS for now
+* shell.c
+
+* shell.h
+
+* interpreter.c
+
+* interpreter.h
+
+* shellmemory.c
+
+* shellmemory.h
+
+* scheduler.c
+
+* scheduler.h
+
+### (test cases)
+
+
+
+## Notes:
+Our code builds off of our A1 submission code. Everything added onto our previous submission is entirely our work.
