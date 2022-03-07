@@ -18,10 +18,8 @@ typedef struct PCB {
 
 PCB *head = NULL; // global head of ready queue
 char *policy;
-int latestPid;
+int latestPid; // holds last used pid, in order to ensure all pid's are unique
 
-// int schedulerExecFCFS(char *scripts[], int progNum, bool RR, bool SJF);
-// void runQueue(int progNum, bool RR, bool SJF);
 void setPolicy(char *p);
 int schedulerStart(char *scripts[], int progNum);
 void runQueue(int progNum);
@@ -31,25 +29,19 @@ int prepend(int start, int len);
 int insertInQueue(int start, int len);
 int dequeue();
 void removeFromQueue(int pid);
-void mergeSort(struct PCB** headRef);
-void splitMiddle(struct PCB* head, struct PCB** aRef, struct PCB** bRef);
-struct PCB* sortedMerge(struct PCB* a, struct PCB* b);
 
 void setPolicy(char *p){
     policy = p;
 }
 
 int schedulerStart(char *scripts[], int progNum){
-    latestPid = -1;
+    latestPid = -1; // initialized latestPid
 
-    int errCode;
     char line[1000];
     int lineCount, startPosition;
     char buff[10];
 
-    for(int i = 0; i < progNum; i++){
-        errCode = 0;
-        
+    for(int i = 0; i < progNum; i++){        
         FILE *p = fopen(scripts[i],"rt"); 
         if(p == NULL) return badcommandFileDoesNotExist();
         
@@ -74,11 +66,6 @@ int schedulerStart(char *scripts[], int progNum){
 }
 
 void runQueue(int progNum){
-    // run head prog, remove from mem, dequeue
-    // if(strcmp(policy, "SJF") == 0){
-    //     mergeSort(&head);
-    // }
-
     if(strcmp(policy, "FCFS") == 0 || strcmp(policy, "SJF") == 0){
         char *currCommand;
         for(int i = 0; i < progNum; i++){
@@ -109,9 +96,7 @@ void runQueue(int progNum){
             parseInput(currCommand); // from shell, which calls interpreter()
             endT++; // increment time
 
-            // reassess after a time slice has passed
-            if(endT - startT >= timeSlice){ 
-                 // age
+            if(endT - startT >= timeSlice){ // reassess after a time slice has passed
                 endT = 0; // restart "timer"
                 if(!stopAging){
                     stopAging = age();
@@ -137,7 +122,7 @@ void runQueue(int progNum){
                     }
                     // if prog with lowest score is something other than head, we promote it
                     // promote: put current head at the end of the queue and prog with new lowest score at the head
-                    if(lowest -> pid != head -> pid){
+                    if(lowest != head){
                         // find tail
                         PCB *tail;
                         curr = head;
@@ -181,8 +166,8 @@ void runQueue(int progNum){
                 if(currPCB -> pc > currPCB -> len) break; // break if we've reached the end of the prog
             }
 
-            // if we executed everything, remove code from shellmemory and remove from queue (clean up)
-            if(currPCB -> pc > currPCB -> len){
+            
+            if(currPCB -> pc > currPCB -> len){ // if we executed everything, remove code from shellmemory and remove from queue (clean up) and go to next prog
                 for(int k = currPCB -> startMem; k < currPCB -> startMem + currPCB -> len; k++){
                     mem_remove_by_position(k);
                 }
@@ -203,9 +188,10 @@ void runQueue(int progNum){
 
 // Decrease lenScore of all PCBs by 1, except for the head
 // Length score cannot be lower than 0
+// Return whether all scores are 0
 bool age(){
     PCB *curr = head;
-    bool allZeros = true;
+    bool allZeros = head -> lenScore == 0;
     while(curr -> next != NULL){
         curr = curr -> next;
         if(curr -> lenScore > 0){
@@ -342,58 +328,4 @@ void removeFromQueue(int pid){
             currPCB = currPCB -> next;
         }
     }
-}
-
-void mergeSort(struct PCB** headRef){
-    PCB* head = *headRef;
-    PCB* a;
-    PCB* b;
-
-    if(head == NULL || head -> next == NULL){
-        return;
-    }
-
-    splitMiddle(head, &a, &b);
-
-    mergeSort(&a);
-    mergeSort(&b);
-
-    *headRef = sortedMerge(a, b);
-}
-
-void splitMiddle(PCB* head, PCB** aRef, PCB** bRef){
-    PCB* fast;
-    PCB* slow;
-    slow = head;
-    fast = head -> next;
-
-    while(fast != NULL && fast -> next != NULL){
-        slow = slow -> next;
-        fast = fast -> next -> next;
-    }
-
-    *aRef = head;
-    *bRef = slow -> next;
-}
-
-struct PCB* sortedMerge(PCB* a, PCB* b){
-
-    PCB* sort = NULL;
-    if(a == NULL){
-        return b;
-    }
-    else if(b == NULL){
-        return a;
-    }
-
-    if(a -> len <= b -> len){
-        sort = a;
-        a -> next = sortedMerge(a -> next, b);
-    }
-    else{
-        sort = b;
-        b -> next = sortedMerge(b -> next, a);
-    }
-
-    return sort;
 }
