@@ -16,15 +16,17 @@ typedef struct PCB {
 } PCB;
 
 PCB *head = NULL; // global head of ready queue
-
 char *policy;
+int latestPid;
 
 // int schedulerExecFCFS(char *scripts[], int progNum, bool RR, bool SJF);
 // void runQueue(int progNum, bool RR, bool SJF);
 void setPolicy(char *p);
 int schedulerStart(char *scripts[], int progNum);
 void runQueue(int progNum);
-void enqueue(int start, int len);
+int enqueue(int start, int len);
+int prepend(int start, int len);
+int insertInQueue(int start, int len);
 int dequeue();
 void removeFromQueue(int pid);
 void mergeSort(struct PCB** headRef);
@@ -36,38 +38,36 @@ void setPolicy(char *p){
 }
 
 int schedulerStart(char *scripts[], int progNum){
+    latestPid = -1;
+
     int errCode;
     char line[1000];
     int lineCount, startPosition;
     char buff[10];
 
-    if(strcmp(policy, "SJF") != 0) { // don't sort
-        for(int i = 0; i < progNum; i++){
-            errCode = 0;
-            
-            FILE *p = fopen(scripts[i],"rt"); 
-            if(p == NULL) return badcommandFileDoesNotExist();
-            
-            lineCount = 0;
-            startPosition; // contains position in memory of 1st line of code
-            
-            while(!feof(p)){
-                fgets(line, 999, p);
-                lineCount++;
-                sprintf(buff, "%d", lineCount);
-                if(lineCount == 1) startPosition = insert(buff, line);
-                else insert(buff, line);
+    for(int i = 0; i < progNum; i++){
+        errCode = 0;
+        
+        FILE *p = fopen(scripts[i],"rt"); 
+        if(p == NULL) return badcommandFileDoesNotExist();
+        
+        lineCount = 0;
+        startPosition; // contains position in memory of 1st line of code
+        
+        while(!feof(p)){
+            fgets(line, 999, p);
+            lineCount++;
+            sprintf(buff, "%d", lineCount);
+            if(lineCount == 1) startPosition = insert(buff, line);
+            else insert(buff, line);
 
-                memset(line, 0, sizeof(line));
-            }
-            fclose(p);
-
-            enqueue(startPosition, lineCount);
+            memset(line, 0, sizeof(line));
         }
-    } else{ // SJF
+        fclose(p);
 
+        if(strcmp(policy, "SJF") != 0) enqueue(startPosition, lineCount);
+        else insertInQueue(startPosition, lineCount); // add PCB to an ordered queue in inc order by program length (lines)
     }
-    
     runQueue(progNum);
 }
 
@@ -101,7 +101,6 @@ void runQueue(int progNum){
         while(head != NULL){
             for(int j = 0; j < quantum; j++){
                 currCommand = mem_get_value_from_position(currPCB -> startMem + currPCB -> pc - 1);
-                //printf("Running command: %s\n", currCommand);
                 parseInput(currCommand); // from shell, which calls interpreter()
                 currPCB -> pc = (currPCB -> pc) + 1; // increment pc
                 if(currPCB -> pc > currPCB -> len) break;
@@ -127,32 +126,83 @@ void runQueue(int progNum){
 
 }
 
-void enqueue(int start, int len){
+// Add PCB at the end of the queue
+// Return its pid
+int enqueue(int start, int len){
     if(head == NULL) {
         head = malloc(sizeof(PCB)); 
-        head -> pid = 1;
+        head -> pid = ++latestPid;
         head -> startMem = start;
         head -> len = len;
         head -> pc = 1;
         head -> next = NULL;
+        return head -> pid;
     } else {
         PCB *current = head;
-        int prevID = current -> pid;
         while (current -> next != NULL) {
             current = current -> next;
-            prevID = current -> pid;
         } 
         PCB *new = malloc(sizeof(PCB));
         current -> next = new; 
-        new -> pid = ++prevID; // unique pid
+        new -> pid = ++latestPid; // unique pid
         new -> startMem = start;
         new -> len = len;
         new -> pc = 1;
         new -> next = NULL;
+        return new -> pid;
     }
 }
 
-// Remove PCB in head of queue and return it's pid
+// Add PCB at the head of the queue
+// Return its pid
+int prepend(int start, int len){
+    if(head == NULL){
+        head = malloc(sizeof(PCB)); 
+        head -> pid = ++latestPid;
+        head -> startMem = start;
+        head -> len = len;
+        head -> pc = 1;
+        head -> next = NULL;
+    } else{
+        PCB *new = malloc(sizeof(PCB));
+        new -> pid = ++latestPid; // unique pid
+        new -> startMem = start;
+        new -> len = len;
+        new -> pc = 1;
+        new -> next = head;
+        head = new;
+    }
+    return head -> pid;
+}
+
+// Add a PCB to an ordered queue (increasing by length)
+// Return pid
+int insertInQueue(int start, int len){
+    if(head == NULL) return enqueue(start, len);
+    else if(len < head -> len) return prepend(start, len);
+    else{
+        PCB *curr = head;
+        while(curr -> next != NULL){  
+            if(len < curr -> next -> len){
+                PCB *new = malloc(sizeof(PCB));
+                new -> pid = ++latestPid; 
+                new -> startMem = start;
+                new -> len = len;
+                new -> pc = 1;
+                PCB *next = curr -> next;
+                curr -> next = new;
+                new -> next = next;
+                return new -> pid;
+            }
+            curr = curr -> next;
+        }
+        return enqueue(start, len); // if program wasn't placed in the queue, add it to the end
+    }
+}
+
+
+// Remove PCB at the head of the queue
+// Return its pid
 int dequeue(){
     PCB **head_ptr = &head;
 
@@ -169,6 +219,7 @@ int dequeue(){
     return retpid;
 }
 
+// Remove PCB with given pid from the queue (and free memory space)
 void removeFromQueue(int pid){
     bool cont;
     PCB *currPCB;
