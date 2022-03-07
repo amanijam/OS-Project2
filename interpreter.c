@@ -125,16 +125,17 @@ int interpreter(char* command_args[], int args_size){
 int help(){
 
 	char help_string[] = "COMMAND			DESCRIPTION\n \
-		help			Displays all the commands\n \
-		quit			Exits / terminates the shell with “Bye!”\n \
-		set VAR STRING		Assigns a value to shell memory\n \
-		print VAR		Displays the STRING assigned to VAR\n \
-		echo VAR STRING 	Displays the string on a new line \n \
-		run SCRIPT.TXT		Executes the file SCRIPT.TXT\n \
-		my_ls 			Lists all files present in current directory\n \
-		(multiple commands)	Runs up to 5 commands per line, separated by\n \
-					 semicolons (;) added to the end of the last word\n \
-					 in each command";
+	help		Displays all the commands\n \
+	quit		Exits / terminates the shell with “Bye!”\n \
+	set VAR STRING	Assigns a value to shell memory\n \
+	print VAR	Displays the STRING assigned to VAR\n \
+	echo VAR STRING	Displays the string on a new line \n \
+	run SCRIPT.TXT	Executes the file SCRIPT.TXT\n \
+	my_ls 		Lists all files present in current directory\n \
+	(multiple commands)	Runs up to 5 commands per line, separated by\n \
+				semicolons (;) added to the end of the last word in each command\n \
+	exec prog1 prog2 prog3 POLICY	Executes up to 3 commands\n \
+					according to the scheduling policy";
 	printf("%s\n", help_string);
 	return 0;
 }
