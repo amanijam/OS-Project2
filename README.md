@@ -9,24 +9,26 @@
 ## In this folder:
 * Makefile
 
-* shell.c
+* shell.c, shell.h
 
-* shell.h
+* interpreter.c, interpreter.h
 
-* interpreter.c
+* shellmemory.c, shellmemory.h
 
-* interpreter.h
+* scheduler.c, scheduler.h
 
-* shellmemory.c
+### (given test cases)
+* prog1, prog2, prog3 (used as programs for testing)
 
-* shellmemory.h
+* FCFS, FCFS_result
 
-* scheduler.c
+* SJF, SJF_result
 
-* scheduler.h
+* RR, RR_result
 
-### (test cases)
+* AGING, AGING_result
 
+* FileNameTest, FileNameTest_result 
 
 
 ## Notes:
